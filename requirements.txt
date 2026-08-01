@@ -1,0 +1,15 @@
+# Install PyTorch separately first (Kaggle compatible):
+# !pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu121
+
+fastapi
+uvicorn
+python-multipart
+pydantic
+jinja2
+opencv-python
+imageio
+imageio-ffmpeg
+faster-whisper
+edge-tts
+pydub
+numpy

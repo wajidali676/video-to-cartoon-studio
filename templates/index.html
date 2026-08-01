@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video to Cartoon Studio</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-primary: #0f0f1a;
+            --bg-secondary: #1a1a2e;
+            --bg-card: #16162a;
+            --border: #2a2a4a;
+            --border-light: #3a3a6a;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0c0;
+            --text-muted: #6a6a8a;
+            --accent-pink: #ff6b9d;
+            --accent-orange: #feca57;
+            --accent-blue: #48dbfb;
+            --accent-green: #1dd1a1;
+            --accent-red: #ff6b6b;
+            --gradient-primary: linear-gradient(135deg, #ff6b9d 0%, #feca57 100%);
+            --shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(180deg, var(--bg-secondary) 0%, rgba(26,26,46,0.95) 100%);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            position: sticky; top: 0; z-index: 100;
+        }
+        .logo { display: flex; align-items: center; gap: 14px; }
+        .logo-icon {
+            width: 44px; height: 44px;
+            background: var(--gradient-primary);
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px;
+        }
+        .logo h1 { font-size: 20px; font-weight: 700; }
+        .logo span { font-size: 11px; color: var(--text-muted); display: block; margin-top: 2px; }
+        .header-actions { display: flex; gap: 10px; }
+        .btn-icon {
+            background: var(--bg-card); border: 1px solid var(--border);
+            color: var(--text-secondary); padding: 10px 16px;
+            border-radius: 10px; cursor: pointer; font-size: 13px;
+            transition: all 0.3s; display: flex; align-items: center; gap: 6px;
+        }
+        .btn-icon:hover { background: var(--border); color: var(--text-primary); }
+
+        .main-container {
+            max-width: 1600px; margin: 0 auto;
+            padding: 24px 32px;
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 24px;
+        }
+        .panel {
+            background: var(--bg-secondary);
+            border-radius: 20px; padding: 24px;
+            border: 1px solid var(--border);
+        }
+        .panel-title {
+            font-size: 14px; font-weight: 600;
+            margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        .upload-zone {
+            border: 2px dashed var(--border-light);
+            border-radius: 16px; padding: 40px 20px;
+            text-align: center; cursor: pointer;
+            transition: all 0.4s; background: var(--bg-card);
+            position: relative; overflow: hidden;
+        }
+        .upload-zone:hover {
+            border-color: var(--accent-pink);
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(255,107,157,0.2);
+        }
+        .upload-zone input { display: none; }
+        .upload-icon { font-size: 48px; margin-bottom: 12px; }
+        .upload-text { color: var(--text-secondary); font-size: 14px; }
+        .upload-hint { color: var(--text-muted); font-size: 12px; margin-top: 6px; }
+        .upload-filename { color: var(--accent-orange); font-weight: 600; margin-top: 10px; font-size: 13px; }
+        .upload-meta { display: flex; gap: 16px; justify-content: center; margin-top: 8px; font-size: 12px; color: var(--text-muted); }
+
+        .style-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .style-card {
+            background: var(--bg-card); border: 2px solid transparent;
+            border-radius: 14px; padding: 18px 12px;
+            text-align: center; cursor: pointer; transition: all 0.3s;
+            position: relative; overflow: hidden;
+        }
+        .style-card:hover { transform: translateY(-3px); border-color: var(--border-light); }
+        .style-card.active {
+            border-color: var(--accent-pink);
+            background: linear-gradient(135deg, rgba(255,107,157,0.15) 0%, rgba(254,202,87,0.1) 100%);
+            box-shadow: 0 4px 20px rgba(255,107,157,0.2);
+        }
+        .style-card .icon { font-size: 28px; display: block; margin-bottom: 8px; }
+        .style-card .label { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+        .style-card.active .label { color: var(--text-primary); }
+        .style-card .badge {
+            position: absolute; top: 6px; right: 6px;
+            background: var(--accent-green); color: var(--bg-primary);
+            font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+        }
+
+        .control-group { margin-bottom: 20px; }
+        .control-label {
+            display: block; font-size: 11px; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.8px;
+            margin-bottom: 10px; font-weight: 600;
+        }
+        select, input[type="text"] {
+            width: 100%; background: var(--bg-card); border: 1px solid var(--border);
+            color: var(--text-primary); padding: 12px 14px;
+            border-radius: 12px; font-size: 14px; outline: none;
+        }
+        select:focus, input[type="text"]:focus { border-color: var(--accent-pink); }
+        .range-container { display: flex; align-items: center; gap: 14px; }
+        input[type="range"] {
+            flex: 1; -webkit-appearance: none; appearance: none;
+            height: 6px; background: var(--bg-card); border-radius: 3px; outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 18px; height: 18px;
+            background: var(--gradient-primary); border-radius: 50%; cursor: pointer;
+            box-shadow: 0 2px 10px rgba(255,107,157,0.4);
+        }
+        .range-value {
+            min-width: 40px; text-align: center; font-size: 14px; font-weight: 700;
+            color: var(--accent-orange); background: var(--bg-card);
+            padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border);
+        }
+
+        .voice-options { background: var(--bg-card); border-radius: 14px; padding: 8px; margin-bottom: 16px; }
+        .voice-option { display: flex; align-items: center; gap: 12px; padding: 12px; cursor: pointer; border-radius: 10px; }
+        .voice-option:hover { background: rgba(255,255,255,0.03); }
+        .voice-option input[type="radio"] { width: 18px; height: 18px; accent-color: var(--accent-pink); }
+        .voice-option .voice-label { font-size: 13px; color: var(--text-secondary); }
+        .voice-option .voice-desc { font-size: 11px; color: var(--text-muted); display: block; margin-top: 2px; }
+
+        .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; }
+        .toggle-label { font-size: 13px; color: var(--text-secondary); }
+        .toggle {
+            width: 48px; height: 26px; background: var(--bg-card);
+            border-radius: 13px; position: relative; cursor: pointer;
+            transition: 0.3s; border: 1px solid var(--border);
+        }
+        .toggle::after {
+            content: ''; position: absolute; width: 20px; height: 20px;
+            background: var(--text-muted); border-radius: 50%; top: 2px; left: 2px; transition: 0.3s;
+        }
+        .toggle.active { background: var(--accent-pink); border-color: var(--accent-pink); }
+        .toggle.active::after { left: 24px; background: white; }
+
+        .process-btn {
+            width: 100%; background: var(--gradient-primary); border: none;
+            color: var(--bg-primary); padding: 16px; border-radius: 14px;
+            font-size: 15px; font-weight: 700; cursor: pointer;
+            transition: all 0.3s; position: relative; overflow: hidden;
+        }
+        .process-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 35px rgba(255,107,157,0.35); }
+        .process-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .preview-panel {
+            background: var(--bg-secondary); border-radius: 20px;
+            border: 1px solid var(--border); overflow: hidden;
+            display: flex; flex-direction: column; min-height: 600px;
+        }
+        .preview-header {
+            padding: 20px 24px; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .preview-title { font-size: 14px; font-weight: 600; }
+        .status-pill {
+            padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .status-pill.ready { background: rgba(72,219,251,0.15); color: var(--accent-blue); }
+        .status-pill.processing { background: rgba(254,202,87,0.15); color: var(--accent-orange); }
+        .status-pill.done { background: rgba(29,209,161,0.15); color: var(--accent-green); }
+        .status-pill.error { background: rgba(255,107,107,0.15); color: var(--accent-red); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .status-pill.processing .status-dot { animation: blink 1.5s infinite; }
+        @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .preview-body {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; padding: 40px;
+            background: linear-gradient(180deg, rgba(15,15,26,0.5) 0%, var(--bg-primary) 100%);
+        }
+        .preview-video { max-width: 100%; max-height: 55vh; border-radius: 16px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+        .preview-placeholder { text-align: center; color: var(--text-muted); }
+        .preview-placeholder .icon { font-size: 72px; margin-bottom: 20px; opacity: 0.5; }
+        .preview-placeholder h3 { font-size: 18px; color: var(--text-secondary); margin-bottom: 8px; }
+        .preview-placeholder p { font-size: 14px; }
+
+        .progress-section {
+            padding: 24px; border-top: 1px solid var(--border); background: var(--bg-card);
+        }
+        .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .progress-label { font-size: 13px; color: var(--text-secondary); font-weight: 600; }
+        .progress-percent { font-size: 18px; font-weight: 700; color: var(--accent-orange); }
+        .progress-bar-bg { height: 8px; background: var(--bg-secondary); border-radius: 4px; overflow: hidden; }
+        .progress-bar-fill {
+            height: 100%; width: 0%; background: var(--gradient-primary);
+            border-radius: 4px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        .progress-bar-fill::after {
+            content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 40px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3));
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer { 0% { transform: translateX(-40px); } 100% { transform: translateX(40px); } }
+        .progress-steps { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+        .progress-step {
+            font-size: 11px; padding: 4px 10px; border-radius: 6px;
+            background: var(--bg-secondary); color: var(--text-muted);
+            border: 1px solid var(--border); transition: all 0.3s;
+        }
+        .progress-step.active { background: rgba(255,107,157,0.15); color: var(--accent-pink); border-color: rgba(255,107,157,0.3); }
+        .progress-step.done { background: rgba(29,209,161,0.15); color: var(--accent-green); border-color: rgba(29,209,161,0.3); }
+
+        .download-section { padding: 24px; border-top: 1px solid var(--border); background: var(--bg-card); }
+        .download-title { font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 14px; font-weight: 600; }
+        .download-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .download-btn {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 14px; border-radius: 12px; font-size: 14px; font-weight: 600;
+            cursor: pointer; text-decoration: none; transition: all 0.3s; border: none;
+        }
+        .download-btn.primary { background: var(--gradient-primary); color: var(--bg-primary); box-shadow: 0 4px 20px rgba(255,107,157,0.3); }
+        .download-btn.primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(255,107,157,0.4); }
+        .download-btn.secondary { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); }
+        .download-btn.secondary:hover { background: var(--border); }
+
+        .history-section { margin-top: 24px; }
+        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .history-title { font-size: 16px; font-weight: 700; }
+        .history-count { font-size: 12px; color: var(--text-muted); background: var(--bg-card); padding: 4px 10px; border-radius: 10px; }
+        .history-list { display: flex; flex-direction: column; gap: 10px; }
+        .history-item {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 16px;
+            display: grid; grid-template-columns: 1fr auto auto; gap: 16px;
+            align-items: center; transition: all 0.3s;
+        }
+        .history-item:hover { border-color: var(--border-light); }
+        .history-info { min-width: 0; }
+        .history-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .history-meta { font-size: 12px; color: var(--text-muted); margin-top: 4px; display: flex; gap: 12px; }
+        .history-style-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 2px 8px; border-radius: 6px; background: rgba(255,107,157,0.1); color: var(--accent-pink); }
+        .history-status { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 8px; }
+        .history-status.completed { background: rgba(29,209,161,0.15); color: var(--accent-green); }
+        .history-actions { display: flex; gap: 8px; }
+        .history-btn { padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; text-decoration: none; border: none; transition: all 0.3s; }
+        .history-btn.download { background: var(--accent-green); color: var(--bg-primary); }
+        .history-btn.download:hover { background: #17c693; }
+        .history-empty { text-align: center; padding: 40px; color: var(--text-muted); font-size: 14px; }
+
+        @media (max-width: 1100px) { .main-container { grid-template-columns: 1fr; } .download-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 600px) { .header { padding: 12px 16px; } .main-container { padding: 16px; } .style-grid { grid-template-columns: 1fr; } .history-item { grid-template-columns: 1fr; gap: 10px; } .history-actions { justify-content: flex-end; } }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">🎨</div>
+            <div>
+                <h1>Video to Cartoon Studio</h1>
+                <span>AI Powered • Kaggle Optimized</span>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn-icon" onclick="checkVRAM()">🎮 VRAM</button>
+            <button class="btn-icon" onclick="refreshHistory()">🔄 Refresh</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="left-panel">
+            <div class="panel">
+                <div class="panel-title">📤 Upload & Settings</div>
+
+                <div class="upload-zone" onclick="document.getElementById('videoInput').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleDrop(event)">
+                    <input type="file" id="videoInput" accept="video/*" onchange="handleUpload(this)">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">Click to upload or drag video here</div>
+                    <div class="upload-hint">MP4, MOV, AVI — Max 1 minute</div>
+                    <div class="upload-filename" id="filename"></div>
+                    <div class="upload-meta hidden" id="uploadMeta">
+                        <span id="metaDuration"></span><span>•</span><span id="metaResolution"></span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">Cartoon Style</div>
+                    <div class="style-grid">
+                        <div class="style-card active" onclick="selectStyle(this, 'cartoon')">
+                            <span class="badge">Popular</span>
+                            <span class="icon">✏️</span><span class="label">Cartoon</span>
+                        </div>
+                        <div class="style-card" onclick="selectStyle(this, 'anime')">
+                            <span class="badge">AI</span>
+                            <span class="icon">⛩️</span><span class="label">Anime</span>
+                        </div>
+                        <div class="style-card" onclick="selectStyle(this, '3d_render')">
+                            <span class="icon">🎮</span><span class="label">3D Render</span>
+                        </div>
+                        <div class="style-card" onclick="selectStyle(this, 'sketch')">
+                            <span class="icon">✏️</span><span class="label">Sketch</span>
+                        </div>
+                        <div class="style-card" onclick="selectStyle(this, 'watercolor')">
+                            <span class="icon">🎨</span><span class="label">Watercolor</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">Voice Option</div>
+                    <div class="voice-options">
+                        <label class="voice-option">
+                            <input type="radio" name="voice" value="original" checked onchange="toggleVoiceOptions()">
+                            <div><span class="voice-label">Original Voice</span><span class="voice-desc">Keep original with pitch shift</span></div>
+                        </label>
+                        <label class="voice-option">
+                            <input type="radio" name="voice" value="extract" onchange="toggleVoiceOptions()">
+                            <div><span class="voice-label">Extract & Replace</span><span class="voice-desc">AI extracts text, re-voices in chosen language</span></div>
+                        </label>
+                        <label class="voice-option">
+                            <input type="radio" name="voice" value="tts" onchange="toggleVoiceOptions()">
+                            <div><span class="voice-label">Text to Speech</span><span class="voice-desc">Type your own voiceover text</span></div>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="ttsInput" class="control-group hidden">
+                    <div class="control-label">TTS Text / Voiceover Prompt</div>
+                    <input type="text" id="ttsText" placeholder="Enter text for AI voiceover...">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">Voice Language</div>
+                    <select id="language">
+                        <option value="en">🇺🇸 English</option>
+                        <option value="ur">🇵🇰 Urdu</option>
+                        <option value="hi">🇮🇳 Hindi</option>
+                        <option value="ar">🇸🇦 Arabic</option>
+                        <option value="es">🇪🇸 Spanish</option>
+                        <option value="fr">🇫🇷 French</option>
+                        <option value="de">🇩🇪 German</option>
+                        <option value="zh">🇨🇳 Chinese</option>
+                        <option value="ja">🇯🇵 Japanese</option>
+                        <option value="ko">🇰🇷 Korean</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">Pitch Shift</div>
+                    <div class="range-container">
+                        <input type="range" id="pitch" min="-12" max="12" value="0" oninput="updateValue(this, 'pitchValue')">
+                        <div class="range-value" id="pitchValue">0</div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">Aesthetic Filter</div>
+                    <select id="aesthetic">
+                        <option value="none">✨ No Filter</option>
+                        <option value="cinematic">🎬 Cinematic</option>
+                        <option value="vintage">📷 Vintage</option>
+                        <option value="bright">☀️ Bright</option>
+                        <option value="dramatic">🎭 Dramatic</option>
+                        <option value="soft">🌸 Soft</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">Segment Duration</div>
+                    <div class="range-container">
+                        <input type="range" id="segmentDuration" min="3" max="15" value="5" oninput="updateValue(this, 'segValue')">
+                        <div class="range-value" id="segValue">5s</div>
+                    </div>
+                </div>
+
+                <div class="toggle-row">
+                    <span class="toggle-label">🪞 Mirror Flip Alternate</span>
+                    <div class="toggle" id="mirrorToggle" onclick="this.classList.toggle('active')"></div>
+                </div>
+
+                <button class="process-btn" id="processBtn" onclick="startProcessing()" disabled>⚡ Start Processing</button>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="preview-panel">
+                <div class="preview-header">
+                    <span class="preview-title">🎬 Preview</span>
+                    <span class="status-pill ready" id="statusBadge"><span class="status-dot"></span> Ready</span>
+                </div>
+
+                <div class="preview-body" id="previewBody">
+                    <div class="preview-placeholder" id="placeholder">
+                        <div class="icon">🎬</div>
+                        <h3>Your cartoon video will appear here</h3>
+                        <p>Upload a video and click Start Processing</p>
+                    </div>
+                    <video id="previewVideo" class="preview-video hidden" controls></video>
+                </div>
+
+                <div class="progress-section hidden" id="progressSection">
+                    <div class="progress-header">
+                        <span class="progress-label" id="progressLabel">Processing...</span>
+                        <span class="progress-percent" id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-steps" id="progressSteps">
+                        <span class="progress-step active" id="step1">📤 Upload</span>
+                        <span class="progress-step" id="step2">🧠 Load AI</span>
+                        <span class="progress-step" id="step3">✂️ Split</span>
+                        <span class="progress-step" id="step4">🎨 Cartoonize</span>
+                        <span class="progress-step" id="step5">🔊 Voice</span>
+                        <span class="progress-step" id="step6">📦 Combine</span>
+                    </div>
+                </div>
+
+                <div class="download-section hidden" id="downloadSection">
+                    <div class="download-title">📥 Download Your Video</div>
+                    <div class="download-grid">
+                        <a href="#" class="download-btn secondary" id="downloadNoVoice" download>🎬 Video Only</a>
+                        <a href="#" class="download-btn primary" id="downloadWithVoice" download>🎬 + 🔊 With Voice</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="history-section panel">
+                <div class="history-header">
+                    <span class="history-title">📜 Processing History</span>
+                    <span class="history-count" id="historyCount">0 videos</span>
+                </div>
+                <div class="history-list" id="historyList">
+                    <div class="history-empty">No videos processed yet. Upload and process your first video!</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentFile = null, selectedStyle = 'cartoon', isProcessing = false;
+
+        function updateValue(slider, displayId) {
+            const suffix = displayId === 'segValue' ? 's' : '';
+            document.getElementById(displayId).textContent = slider.value + suffix;
+        }
+        function selectStyle(el, style) {
+            document.querySelectorAll('.style-card').forEach(b => b.classList.remove('active'));
+            el.classList.add('active'); selectedStyle = style;
+        }
+        function toggleVoiceOptions() {
+            const val = document.querySelector('input[name="voice"]:checked').value;
+            document.getElementById('ttsInput').classList.toggle('hidden', val !== 'tts');
+        }
+        function handleDrop(e) {
+            e.preventDefault(); e.currentTarget.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) { document.getElementById('videoInput').files = files; handleUpload(document.getElementById('videoInput')); }
+        }
+        async function handleUpload(input) {
+            const file = input.files[0]; if (!file) return;
+            if (file.size > 500 * 1024 * 1024) { alert('❌ File too large. Max 500MB.'); return; }
+            document.getElementById('filename').textContent = file.name;
+            document.getElementById('processBtn').disabled = true;
+            document.getElementById('processBtn').textContent = '⏳ Uploading...';
+            const formData = new FormData(); formData.append('video', file);
+            try {
+                const res = await fetch('/upload', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.success) {
+                    currentFile = data.filename;
+                    document.getElementById('processBtn').disabled = false;
+                    document.getElementById('processBtn').textContent = '⚡ Start Processing';
+                    document.getElementById('uploadMeta').classList.remove('hidden');
+                    document.getElementById('metaDuration').textContent = data.duration + 's';
+                    document.getElementById('metaResolution').textContent = data.resolution;
+                    updateStatus('ready', `Ready • ${data.resolution} • ${data.duration}s`);
+                }
+            } catch (e) { alert('❌ Upload failed: ' + e.message); document.getElementById('processBtn').textContent = '⚡ Start Processing'; }
+        }
+        function updateStatus(type, text) {
+            const badge = document.getElementById('statusBadge');
+            badge.className = 'status-pill ' + type;
+            badge.innerHTML = `<span class="status-dot"></span> ${text}`;
+        }
+        function setProgress(percent, label, activeStep) {
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('progressPercent').textContent = Math.round(percent) + '%';
+            document.getElementById('progressLabel').textContent = label;
+            for (let i = 1; i <= 6; i++) {
+                const step = document.getElementById('step' + i);
+                step.classList.remove('active', 'done');
+                if (i < activeStep) step.classList.add('done');
+                else if (i === activeStep) step.classList.add('active');
+            }
+        }
+        async function startProcessing() {
+            if (!currentFile || isProcessing) return; isProcessing = true;
+            document.getElementById('placeholder').classList.add('hidden');
+            document.getElementById('previewVideo').classList.add('hidden');
+            document.getElementById('progressSection').classList.remove('hidden');
+            document.getElementById('downloadSection').classList.add('hidden');
+            document.getElementById('processBtn').disabled = true;
+            document.getElementById('processBtn').textContent = '⏳ Processing...';
+            updateStatus('processing', 'Processing...');
+
+            const formData = new FormData();
+            formData.append('filename', currentFile);
+            formData.append('style', selectedStyle);
+            formData.append('segment_duration', document.getElementById('segmentDuration').value);
+            formData.append('voice_option', document.querySelector('input[name="voice"]:checked').value);
+            formData.append('language', document.getElementById('language').value);
+            formData.append('pitch', document.getElementById('pitch').value);
+            formData.append('mirror_flip', document.getElementById('mirrorToggle').classList.contains('active'));
+            formData.append('aesthetic', document.getElementById('aesthetic').value);
+            formData.append('tts_text', document.getElementById('ttsText').value);
+
+            const steps = [
+                { pct: 5, label: '📤 Uploading video...', step: 1 },
+                { pct: 15, label: '🧠 Loading AI models...', step: 2 },
+                { pct: 25, label: '✂️ Splitting into segments...', step: 3 },
+                { pct: 50, label: '🎨 Cartoonizing frames...', step: 4 },
+                { pct: 75, label: '🔊 Processing voice...', step: 5 },
+                { pct: 90, label: '📦 Combining final video...', step: 6 }
+            ];
+            let stepIdx = 0;
+            const interval = setInterval(() => {
+                if (stepIdx < steps.length) { const s = steps[stepIdx]; setProgress(s.pct + Math.random() * 5, s.label, s.step); stepIdx++; }
+                else { setProgress(Math.min(95, 90 + Math.random() * 3), '📦 Finalizing...', 6); }
+            }, 3000);
+
+            try {
+                const res = await fetch('/process', { method: 'POST', body: formData });
+                clearInterval(interval); const data = await res.json();
+                if (data.success) {
+                    setProgress(100, '✅ Complete!', 6);
+                    updateStatus('done', 'Complete');
+                    const video = document.getElementById('previewVideo');
+                    video.src = data.download_url_with_voice;
+                    video.classList.remove('hidden'); video.load();
+                    document.getElementById('downloadNoVoice').href = data.download_url_no_voice;
+                    document.getElementById('downloadNoVoice').download = 'cartoon_video_no_voice.mp4';
+                    document.getElementById('downloadWithVoice').href = data.download_url_with_voice;
+                    document.getElementById('downloadWithVoice').download = 'cartoon_video_with_voice.mp4';
+                    document.getElementById('downloadSection').classList.remove('hidden');
+                    setTimeout(() => { document.getElementById('progressSection').classList.add('hidden'); }, 2000);
+                    addToHistory(data.job_id, currentFile, selectedStyle, 'completed', data.download_url_no_voice, data.download_url_with_voice);
+                } else { throw new Error(data.error || 'Processing failed'); }
+            } catch (e) {
+                clearInterval(interval); setProgress(100, '❌ Error', 6);
+                document.getElementById('progressFill').style.background = 'var(--accent-red)';
+                updateStatus('error', 'Failed');
+                document.getElementById('processBtn').disabled = false;
+                document.getElementById('processBtn').textContent = '⚡ Retry Processing';
+                alert('❌ Error: ' + e.message); isProcessing = false;
+            }
+        }
+        function addToHistory(jobId, filename, style, status, urlNoVoice, urlWithVoice) {
+            const list = document.getElementById('historyList');
+            const empty = list.querySelector('.history-empty'); if (empty) empty.remove();
+            const styleEmojis = { cartoon: '✏️', anime: '⛩️', '3d_render': '🎮', sketch: '✏️', watercolor: '🎨' };
+            const item = document.createElement('div'); item.className = 'history-item';
+            item.innerHTML = `
+                <div class="history-info">
+                    <div class="history-name">${filename}</div>
+                    <div class="history-meta">
+                        <span class="history-style-badge">${styleEmojis[style] || '🎨'} ${style}</span>
+                        <span>${new Date().toLocaleTimeString()}</span>
+                    </div>
+                </div>
+                <span class="history-status completed">✅ Done</span>
+                <div class="history-actions">
+                    <a href="${urlNoVoice}" class="history-btn download" download>🎬</a>
+                    <a href="${urlWithVoice}" class="history-btn download" download>🎬+🔊</a>
+                </div>`;
+            list.insertBefore(item, list.firstChild);
+            const count = list.querySelectorAll('.history-item').length;
+            document.getElementById('historyCount').textContent = count + ' video' + (count > 1 ? 's' : '');
+        }
+        async function refreshHistory() {
+            try {
+                const res = await fetch('/history'); const data = await res.json();
+                const list = document.getElementById('historyList');
+                if (data.history && data.history.length > 0) {
+                    list.innerHTML = '';
+                    data.history.forEach(job => { addToHistory(job.job_id, job.filename, job.style, job.status, job.download_url_no_voice, job.download_url_with_voice); });
+                }
+            } catch (e) { console.log('History refresh failed', e); }
+        }
+        async function checkVRAM() {
+            try { const res = await fetch('/vram'); const data = await res.json();
+                alert(`🎮 GPU VRAM Status\n\n📊 Allocated: ${data.allocated_gb} GB\n💾 Total: ${data.total_gb} GB\n✅ Free: ${data.free_gb} GB`);
+            } catch (e) { alert('❌ Could not check VRAM'); }
+        }
+        refreshHistory();
+    </script>
+</body>
+</html>
